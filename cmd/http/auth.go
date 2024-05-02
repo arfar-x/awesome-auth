@@ -1,22 +1,22 @@
 package http
 
 import (
-	"awesome-auth/internal/core/service"
-	"awesome-auth/internal/mysql"
+	"awesome-auth/internal/core/services/auth"
+	"awesome-auth/internal/repositories"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (s *Server) DefineAuthRoutes(router *gin.RouterGroup) {
 
-	repo := mysql.NewUserRepo(&s.DB)
-	srv := service.NewAuthService(repo)
+	repo := repositories.NewUserRepo(&s.DB)
+	service := auth.NewAuthService(repo)
 
-	auth := router.Group("auth")
+	authRouter := router.Group("auth")
 
-	auth.POST("login", srv.Login)
-	auth.POST("logout", srv.Logout)
-	auth.POST("register", srv.Register)
-	auth.POST("verify", srv.Verify)
-	auth.GET("me", srv.GetMe)
+	authRouter.POST("login", service.Login)
+	authRouter.POST("logout", service.Logout)
+	authRouter.POST("register", service.Register)
+	authRouter.POST("verify", service.Verify)
+	authRouter.GET("me", service.GetMe)
 }

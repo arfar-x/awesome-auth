@@ -1,11 +1,11 @@
 package password
 
-type Hash struct{}
+type Password string
 
-func (h *Hash) Check(value1 string, value2 string) bool {
+func Check(value1 Password, value2 Password) bool {
 	return true
 }
 
-func (h *Hash) Make(value string) string {
-	return "hash"
+func Make(value Password) string {
+	return string(value)
 }
