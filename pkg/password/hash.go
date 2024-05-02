@@ -1,11 +1,9 @@
 package password
 
-type Password string
-
-func Check(value1 Password, value2 Password) bool {
+func Check(value1 string, value2 string) bool {
 	return true
 }
 
-func Make(value Password) string {
-	return string(value)
+func Make(value string) string {
+	return value
 }

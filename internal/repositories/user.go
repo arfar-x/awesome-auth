@@ -2,9 +2,8 @@ package repositories
 
 import (
 	"context"
-	"fmt"
-	"os"
 
+	"awesome-auth/internal/domain"
 	"gorm.io/gorm"
 )
 
@@ -29,43 +28,35 @@ func NewUserRepo(db *gorm.DB) *UserRepo {
 	}
 }
 
-func (u UserRepo) Get(model any) any {
+func (u *UserRepo) Get(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (u UserRepo) Create(ctx context.Context) any {
+func (u *UserRepo) Create(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error) {
+	result := u.DB.WithContext(ctx).
+		Model(u.User).
+		Create(&User{
+			Username:  model.Username,
+			Email:     model.Email,
+			FirstName: model.FirstName,
+			LastName:  model.LastName,
+			Password:  model.Password,
+		})
 
-	user := ctx.Value("payload")
-
-	if u, ok := user.(User); ok {
-		fmt.Println(u.Email)
+	if err := result.Error; err != nil {
+		return model, err
 	}
 
-	//fmt.Println(u.User)
-	//os.Exit(10)
-	//u.User.LastName = ctx.Value("LastName")
-	//u.User.Email = ctx.Value("Email")
-	//u.User.Username = ctx.Value("Username")
-	//u.User.Password = password.Make(ctx.Value("Password"))
-
-	res := u.DB.WithContext(ctx).
-		Model(u.User).
-		Create(&u.User)
-
-	fmt.Println(res)
-	os.Exit(1)
-
-	return res
-	//panic("implement me")
+	return model, nil
 }
 
-func (u UserRepo) Update(model any) any {
+func (u *UserRepo) Update(ctx context.Context, model any) any {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (u UserRepo) Delete(model any) any {
+func (u *UserRepo) Delete(ctx context.Context, model any) any {
 	//TODO implement me
 	panic("implement me")
 }

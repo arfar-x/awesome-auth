@@ -4,7 +4,9 @@ import (
 	"net/http"
 
 	formrequest "awesome-auth/internal/core/http/request"
+	"awesome-auth/internal/domain"
 	"awesome-auth/internal/repositories"
+	"awesome-auth/pkg/response"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,11 +35,20 @@ func (srv *Service) Register(ctx *gin.Context) {
 		return
 	}
 
-	result := srv.Repo.Create( /* WHAT TO SEND HERE ? */ )
-
-	ctx.JSON(http.StatusOK, map[string]any{
-		"data": result,
+	result, err := srv.Repo.Create(ctx, domain.UserDomain{
+		Username:  request.Username,
+		Email:     request.Email,
+		FirstName: request.FirstName,
+		LastName:  request.LastName,
+		Password:  request.Password,
 	})
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(response.InternalError("Could not create user.", nil))
+		return
+	}
+
+	ctx.JSON(response.CreatedResource("User created successfully", result))
 }
 
 func (srv *Service) Verify(ctx *gin.Context) {

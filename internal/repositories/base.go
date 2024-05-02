@@ -1,13 +1,12 @@
 package repositories
 
 import (
+	"context"
 	"time"
 
-	"awesome-auth/internal/adapters/auth"
+	"awesome-auth/internal/domain"
 	"gorm.io/gorm"
 )
-
-type ModelInterface interface{}
 
 type BaseModel struct {
 	ID        uint `gorm:"primarykey"`
@@ -17,9 +16,5 @@ type BaseModel struct {
 }
 
 type RepoInterface interface {
-	Get(model any) any
-	//Create(model context.Context) any
-	Create(adapter auth.RegisterAdapter) any
-	Update(model any) any
-	Delete(model any) any
+	Create(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error)
 }
