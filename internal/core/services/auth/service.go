@@ -28,6 +28,7 @@ func (srv *Service) Logout(ctx *gin.Context) {
 
 }
 
+// Register user.
 func (srv *Service) Register(ctx *gin.Context) {
 	var request formrequest.RegisterRequest
 	if err := ctx.BindJSON(&request); err != nil {
@@ -40,7 +41,10 @@ func (srv *Service) Register(ctx *gin.Context) {
 		Email:     request.Email,
 		FirstName: request.FirstName,
 		LastName:  request.LastName,
-		Password:  request.Password,
+		Password: func() string {
+			hash, _ := password.Make(request.Password)
+			return hash
+		}(),
 	})
 
 	if err != nil {
@@ -48,7 +52,7 @@ func (srv *Service) Register(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(response.CreatedResource("User created successfully", result))
+	ctx.JSON(response.Created("User created successfully", resources.UserShowResource(result)))
 }
 
 func (srv *Service) Verify(ctx *gin.Context) {
