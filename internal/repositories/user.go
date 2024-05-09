@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 
 	"awesome-auth/internal/domain"
 	"gorm.io/gorm"
@@ -45,10 +46,22 @@ func (u *UserRepo) Create(ctx context.Context, model domain.UserDomain) (domain.
 		})
 
 	if err := result.Error; err != nil {
-		return model, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return domain.UserDomain{}, gorm.ErrRecordNotFound
+		} else {
+			panic(err)
+		}
 	}
 
-	return model, nil
+	return domain.UserDomain{
+		FirstName: model.FirstName,
+		LastName:  model.LastName,
+		Username:  model.Username,
+		Email:     model.Email,
+		Password:  model.Password,
+		CreatedAt: model.CreatedAt,
+		UpdatedAt: model.UpdatedAt,
+	}, nil
 }
 
 func (u *UserRepo) Update(ctx context.Context, model any) any {
