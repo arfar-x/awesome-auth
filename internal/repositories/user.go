@@ -35,22 +35,20 @@ func (u *UserRepo) Get(ctx context.Context, model domain.UserDomain) (domain.Use
 }
 
 func (u *UserRepo) Create(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error) {
+	user := &User{
+		Username:  model.Username,
+		Email:     model.Email,
+		FirstName: model.FirstName,
+		LastName:  model.LastName,
+		Password:  model.Password,
+	}
+
 	result := u.DB.WithContext(ctx).
-		Model(u.User).
-		Create(&User{
-			Username:  model.Username,
-			Email:     model.Email,
-			FirstName: model.FirstName,
-			LastName:  model.LastName,
-			Password:  model.Password,
-		})
+		Model(user).
+		Create(&user)
 
 	if err := result.Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return domain.UserDomain{}, gorm.ErrRecordNotFound
-		} else {
-			panic(err)
-		}
+		panic(err)
 	}
 
 	return domain.UserDomain{
@@ -61,6 +59,14 @@ func (u *UserRepo) Create(ctx context.Context, model domain.UserDomain) (domain.
 		Password:  model.Password,
 		CreatedAt: model.CreatedAt,
 		UpdatedAt: model.UpdatedAt,
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Username:  user.Username,
+		Email:     user.Email,
+		Password:  user.Password,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
 	}, nil
 }
 

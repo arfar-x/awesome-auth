@@ -7,6 +7,7 @@ import (
 )
 
 type UserShow struct {
+	ID        uint      `json:"id"`
 	FirstName string    `json:"first_name"`
 	LastName  string    `json:"last_name"`
 	Email     string    `json:"email"`
@@ -16,6 +17,7 @@ type UserShow struct {
 
 func UserShowResource(model domain.UserDomain) UserShow {
 	return UserShow{
+		ID:        model.ID,
 		FirstName: model.FirstName,
 		LastName:  model.LastName,
 		Email:     model.Email,

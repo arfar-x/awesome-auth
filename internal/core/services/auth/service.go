@@ -4,8 +4,10 @@ import (
 	"net/http"
 
 	formrequest "awesome-auth/internal/core/http/request"
+	"awesome-auth/internal/core/http/resources"
 	"awesome-auth/internal/domain"
 	"awesome-auth/internal/repositories"
+	"awesome-auth/pkg/password"
 	"awesome-auth/pkg/response"
 	"github.com/gin-gonic/gin"
 )
@@ -30,13 +32,15 @@ func (srv *Service) Logout(ctx *gin.Context) {
 
 // Register user.
 func (srv *Service) Register(ctx *gin.Context) {
+	defer recoverPanics(ctx)
+
 	var request formrequest.RegisterRequest
 	if err := ctx.BindJSON(&request); err != nil {
 		_ = ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	result, err := srv.Repo.Create(ctx, domain.UserDomain{
+	result, _ := srv.Repo.Create(ctx, domain.UserDomain{
 		Username:  request.Username,
 		Email:     request.Email,
 		FirstName: request.FirstName,
@@ -61,4 +65,10 @@ func (srv *Service) Verify(ctx *gin.Context) {
 
 func (srv *Service) GetMe(ctx *gin.Context) {
 
+}
+
+func recoverPanics(ctx *gin.Context) {
+	if r := recover(); r != nil {
+		ctx.AbortWithStatusJSON(response.InternalError("Could not create user.", nil))
+	}
 }
