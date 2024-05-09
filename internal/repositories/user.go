@@ -30,8 +30,20 @@ func NewUserRepo(db *gorm.DB) *UserRepo {
 }
 
 func (u *UserRepo) Get(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error) {
-	//TODO implement me
-	panic("implement me")
+	result := u.DB.WithContext(ctx).
+		Model(u.User).
+		Where("username = ?", model.Username).
+		First(&u.User)
+
+	if err := result.Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return domain.UserDomain{}, gorm.ErrRecordNotFound
+		} else {
+			panic(err)
+		}
+	}
+
+	return toDomainModel(u.User), nil
 }
 
 func (u *UserRepo) Create(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error) {
@@ -51,14 +63,12 @@ func (u *UserRepo) Create(ctx context.Context, model domain.UserDomain) (domain.
 		panic(err)
 	}
 
+	return toDomainModel(*user), nil
+}
+
+// Turn a repository model object into a domain object.
+func toDomainModel(user User) domain.UserDomain {
 	return domain.UserDomain{
-		FirstName: model.FirstName,
-		LastName:  model.LastName,
-		Username:  model.Username,
-		Email:     model.Email,
-		Password:  model.Password,
-		CreatedAt: model.CreatedAt,
-		UpdatedAt: model.UpdatedAt,
 		ID:        user.ID,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
@@ -67,15 +77,5 @@ func (u *UserRepo) Create(ctx context.Context, model domain.UserDomain) (domain.
 		Password:  user.Password,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
-	}, nil
-}
-
-func (u *UserRepo) Update(ctx context.Context, model any) any {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (u *UserRepo) Delete(ctx context.Context, model any) any {
-	//TODO implement me
-	panic("implement me")
+	}
 }

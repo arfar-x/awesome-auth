@@ -16,5 +16,6 @@ type BaseModel struct {
 }
 
 type RepoInterface interface {
+	Get(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error)
 	Create(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error)
 }
