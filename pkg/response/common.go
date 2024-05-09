@@ -9,7 +9,7 @@ type Response struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 	Data    any    `json:"data"`
-	Err     string `json:"error"`
+	Err     string `json:"error,omitempty"`
 }
 
 func NewResponse(message string, code int, data any, err error) *Response {
@@ -37,8 +37,16 @@ func Success(message string, data any) (int, *Response) {
 	return http.StatusOK, JsonResponse(message, http.StatusOK, data, nil)
 }
 
-func CreatedResource(message string, data any) (int, *Response) {
+func Created(message string, data any) (int, *Response) {
 	return http.StatusCreated, JsonResponse(message, http.StatusCreated, data, nil)
+}
+
+func BadRequest(message string, data any) (int, *Response) {
+	return http.StatusBadRequest, JsonResponse(message, http.StatusBadRequest, data, nil)
+}
+
+func NotFound(message string, data any) (int, *Response) {
+	return http.StatusNotFound, JsonResponse(message, http.StatusNotFound, data, nil)
 }
 
 func Unauthorized(message string, data any) (int, *Response) {
