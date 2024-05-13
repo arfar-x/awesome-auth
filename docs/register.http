@@ -1,0 +1,12 @@
+POST 127.0.0.1:8000/api/v1/auth/register HTTP/1.1
+Host: 127.0.0.1:8000
+Content-Type: application/json
+
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "johndue@hypothetical.com",
+  "username": "jdoe001",
+  "password": "pass123",
+  "confirm_password": "pass123"
+}

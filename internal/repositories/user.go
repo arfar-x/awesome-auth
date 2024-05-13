@@ -10,6 +10,7 @@ import (
 
 type User struct {
 	BaseModel
+	Tokenable
 	Username  string `json:"username" gorm:"index; not null"`
 	Email     string `json:"email" gorm:"index; not null"`
 	FirstName string `json:"first_name"`
@@ -64,6 +65,16 @@ func (u *UserRepo) Create(ctx context.Context, model domain.UserDomain) (domain.
 	}
 
 	return toDomainModel(*user), nil
+}
+
+func (u *UserRepo) Update(ctx context.Context, model any) any {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (u *UserRepo) Delete(ctx context.Context, model any) any {
+	//TODO implement me
+	panic("implement me")
 }
 
 // Turn a repository model object into a domain object.

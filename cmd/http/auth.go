@@ -10,7 +10,8 @@ import (
 func (s *Server) DefineAuthRoutes(router *gin.RouterGroup) {
 
 	repo := repositories.NewUserRepo(&s.DB)
-	service := auth.NewAuthService(repo)
+	tokenRepo := repositories.NewTokenRepo(&s.DB)
+	service := auth.NewAuthService(repo, tokenRepo)
 
 	authRouter := router.Group("auth")
 
