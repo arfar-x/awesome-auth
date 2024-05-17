@@ -15,5 +15,8 @@ func InitDbClient(config *configs.AppConfig) (db *gorm.DB, err error) {
 		config.DB.Name, config.DB.Charset,
 	)
 
-	return gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	return gorm.Open(mysql.Open(dsn), &gorm.Config{
+		SkipDefaultTransaction: false,
+		PrepareStmt:            true,
+	})
 }
