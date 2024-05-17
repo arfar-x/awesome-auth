@@ -4,17 +4,22 @@ import (
 	"context"
 	"time"
 
-	"awesome-auth/internal/domain"
+	"awesome-auth/internal/entities"
 	"awesome-auth/pkg/jwt"
 	"gorm.io/gorm"
 )
 
 type Token struct {
 	BaseModel
-	User      User
+	Value     string
+	ExpiresAt time.Time
 	UserID    uint
-	value     string
-	expiresAt time.Time
+	User      User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+}
+
+type TokenRepoInterface interface {
+	Get(ctx context.Context, model entities.Token) (entities.Token, error)
+	Create(ctx context.Context, model entities.Token) (entities.Token, error)
 }
 
 type TokenRepo struct {
@@ -29,29 +34,40 @@ func NewTokenRepo(db *gorm.DB) *TokenRepo {
 	}
 }
 
-func (t TokenRepo) Get(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error) {
+func (t TokenRepo) Get(ctx context.Context, model entities.Token) (entities.Token, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (t TokenRepo) Create(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error) {
-	//TODO implement me
-	panic("implement me")
+func (t TokenRepo) Create(ctx context.Context, model entities.Token) (entities.Token, error) {
+	token := &Token{
+		UserID:    model.UserID,
+		Value:     model.Value,
+		ExpiresAt: model.ExpiresAt,
+	}
+
+	result := t.DB.WithContext(ctx).
+		Model(token).
+		Create(&token)
+
+	if err := result.Error; err != nil {
+		panic(err)
+	}
+
+	return toTokenEntity(token), nil
 }
 
-type Tokenable struct {
-	Tokens []Token `json:"-" gorm:"foreignKey:UserID,constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+func (t TokenRepo) ValidateToken(token string) bool {
+	return jwt.Validate(token)
 }
 
-func (t Tokenable) CreateToken(ctx context.Context, model domain.UserDomain) string {
-	token := jwt.CreateToken(model.Username)
-
-	// TODO: Somehow to create a record containing the token in the database
-	//result, err := t.
-
-	return token
-}
-
-func (t Tokenable) ValidateToken(ctx context.Context) bool {
-	return jwt.Validate("payload")
+func toTokenEntity(t *Token) entities.Token {
+	return entities.Token{
+		ID:        t.ID,
+		UserID:    t.UserID,
+		Value:     t.Value,
+		ExpiresAt: t.ExpiresAt,
+		CreatedAt: t.CreatedAt,
+		UpdatedAt: t.UpdatedAt,
+	}
 }
