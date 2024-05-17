@@ -2,31 +2,35 @@ package auth
 
 import (
 	"net/http"
+	"strings"
+	"time"
 
+	"awesome-auth/configs"
 	formrequest "awesome-auth/internal/core/http/request"
 	"awesome-auth/internal/core/http/resources"
-	"awesome-auth/internal/domain"
+	"awesome-auth/internal/entities"
 	"awesome-auth/internal/repositories"
+	"awesome-auth/pkg/jwt"
 	"awesome-auth/pkg/password"
 	"awesome-auth/pkg/response"
 	"github.com/gin-gonic/gin"
 )
 
 type Service struct {
-	Repo      repositories.RepoInterface
-	TokenRepo repositories.RepoInterface
+	UserRepo  repositories.UserRepoInterface
+	TokenRepo repositories.TokenRepoInterface
 }
 
-func NewAuthService(repo repositories.RepoInterface, tokenRepo repositories.RepoInterface) *Service {
+func NewAuthService(repo repositories.UserRepoInterface, tokenRepo repositories.TokenRepoInterface) *Service {
 	return &Service{
-		Repo:      repo,
+		UserRepo:  repo,
 		TokenRepo: tokenRepo,
 	}
 }
 
 // Login user with given credentials.
 func (srv *Service) Login(ctx *gin.Context) {
-	//defer recoverPanics(ctx, "Operation failed.")
+	defer recoverPanics(ctx, "Operation failed.")
 
 	var request formrequest.LoginRequest
 	if err := ctx.BindJSON(&request); err != nil {
@@ -34,16 +38,28 @@ func (srv *Service) Login(ctx *gin.Context) {
 		return
 	}
 
-	user, _ := srv.Repo.Get(ctx, domain.UserDomain{Username: request.Username})
+	user, _ := srv.UserRepo.Get(ctx, entities.User{Username: request.Username})
+	if user.ID == 0 {
+		ctx.JSON(response.Unauthorized("Wrong credentials.", nil))
+		return
+	}
 
-	token := srv.Repo..CreateToken(ctx)
+	tokenExpirationTime := time.Now().Add(time.Second * time.Duration(configs.Config.Jwt.ExpirationSeconds))
+	tokenString, expiresAt := jwt.CreateToken(user.Username, tokenExpirationTime)
+	token, _ := srv.TokenRepo.Create(ctx, entities.Token{
+		UserID:    user.ID,
+		Value:     tokenString,
+		ExpiresAt: expiresAt,
+	})
 
 	if password.Check(user.Password, request.Password) {
-		//token := jwt.CreateToken(user.Username)
 		ctx.JSON(http.StatusOK, response.JsonResponse(
 			"Logged in successfully.",
 			http.StatusOK,
-			map[string]string{"token": token},
+			map[string]string{
+				"token":      token.Value,
+				"expires_at": expiresAt.Format("2006-01-02 15:04:05"),
+			},
 			nil,
 		))
 	} else {
@@ -66,7 +82,7 @@ func (srv *Service) Register(ctx *gin.Context) {
 		return
 	}
 
-	result, _ := srv.Repo.Create(ctx, domain.UserDomain{
+	result, _ := srv.UserRepo.Create(ctx, entities.User{
 		Username:  request.Username,
 		Email:     request.Email,
 		FirstName: request.FirstName,
@@ -82,7 +98,8 @@ func (srv *Service) Register(ctx *gin.Context) {
 
 // Verify whether the user is authorized or not.
 func (srv *Service) Verify(ctx *gin.Context) {
-
+	defer recoverPanics(ctx, "Could not verify token.")
+	//token, tokenType := parseToken(ctx.GetHeader("Authorization"))
 }
 
 func (srv *Service) GetMe(ctx *gin.Context) {
@@ -96,4 +113,11 @@ func recoverPanics(ctx *gin.Context, message string) {
 	if r := recover(); r != nil {
 		ctx.AbortWithStatusJSON(response.InternalError(message, nil))
 	}
+}
+
+func parseToken(token string) (value string, tokenType string) {
+	splits := strings.Split(token, " ")
+	value = splits[1]
+	tokenType = strings.ToLower(splits[0])
+	return
 }
