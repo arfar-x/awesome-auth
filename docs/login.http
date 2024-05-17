@@ -1,0 +1,8 @@
+POST 127.0.0.1:8000/api/v1/auth/login HTTP/1.1
+Host: 127.0.0.1:8000
+Content-Type: application/json
+
+{
+  "username": "jdoe001",
+  "password": "pass123"
+}
