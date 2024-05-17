@@ -3,7 +3,7 @@ package resources
 import (
 	"time"
 
-	"awesome-auth/internal/domain"
+	"awesome-auth/internal/entities"
 )
 
 type UserShow struct {
@@ -15,7 +15,7 @@ type UserShow struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func UserShowResource(model domain.UserDomain) UserShow {
+func UserShowResource(model entities.User) UserShow {
 	return UserShow{
 		ID:        model.ID,
 		FirstName: model.FirstName,
