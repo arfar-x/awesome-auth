@@ -16,18 +16,18 @@ func (t *Token) NewToken(payload string) Token {
 	return Token{value: payload}
 }
 
-func CreateToken(payload string) string {
+func CreateToken(payload string, expiresAt time.Time) (string, time.Time) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
-			"username":   payload,
-			"expires_at": time.Now().Add(time.Second * time.Duration(configs.Config.Jwt.ExpirationSeconds)).Unix(),
+			"payload":    payload,
+			"expires_at": expiresAt.Unix(),
 		})
 
 	tokenString, err := token.SignedString([]byte(configs.Config.Jwt.SecretKey))
 	if err != nil {
 		panic(err)
 	}
-	return tokenString
+	return tokenString, expiresAt
 }
 
 func Validate(tokenString string) bool {
@@ -38,6 +38,8 @@ func Validate(tokenString string) bool {
 	if err != nil {
 		panic(err)
 	}
+
+	// TODO: Check token expiration time
 
 	return token.Valid
 }
