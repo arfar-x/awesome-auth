@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"awesome-auth/internal/domain"
+	"awesome-auth/internal/entities"
 	"gorm.io/gorm"
 )
 
 type User struct {
 	BaseModel
-	Tokenable
 	Username  string `json:"username" gorm:"index; not null"`
 	Email     string `json:"email" gorm:"index; not null"`
 	FirstName string `json:"first_name"`
@@ -18,36 +17,42 @@ type User struct {
 	Password  string `json:"-"`
 }
 
+type UserRepoInterface interface {
+	Get(ctx context.Context, model entities.User) (entities.User, error)
+	Create(ctx context.Context, model entities.User) (entities.User, error)
+}
+
 type UserRepo struct {
-	User User
-	DB   *gorm.DB
+	DB *gorm.DB
 }
 
 func NewUserRepo(db *gorm.DB) *UserRepo {
 	return &UserRepo{
-		User: User{},
-		DB:   db,
+		DB: db,
 	}
 }
 
-func (u *UserRepo) Get(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error) {
+func (u *UserRepo) Get(ctx context.Context, model entities.User) (entities.User, error) {
+	user := User{
+		Username: model.Username,
+	}
+
 	result := u.DB.WithContext(ctx).
-		Model(u.User).
-		Where("username = ?", model.Username).
-		First(&u.User)
+		Where(user).
+		First(&user)
 
 	if err := result.Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return domain.UserDomain{}, gorm.ErrRecordNotFound
+			return entities.User{}, gorm.ErrRecordNotFound
 		} else {
 			panic(err)
 		}
 	}
 
-	return toDomainModel(u.User), nil
+	return toUserEntity(user), nil
 }
 
-func (u *UserRepo) Create(ctx context.Context, model domain.UserDomain) (domain.UserDomain, error) {
+func (u *UserRepo) Create(ctx context.Context, model entities.User) (entities.User, error) {
 	user := &User{
 		Username:  model.Username,
 		Email:     model.Email,
@@ -64,7 +69,7 @@ func (u *UserRepo) Create(ctx context.Context, model domain.UserDomain) (domain.
 		panic(err)
 	}
 
-	return toDomainModel(*user), nil
+	return toUserEntity(*user), nil
 }
 
 func (u *UserRepo) Update(ctx context.Context, model any) any {
@@ -77,9 +82,9 @@ func (u *UserRepo) Delete(ctx context.Context, model any) any {
 	panic("implement me")
 }
 
-// Turn a repository model object into a domain object.
-func toDomainModel(user User) domain.UserDomain {
-	return domain.UserDomain{
+// Turn a repository model object into a domain entity.
+func toUserEntity(user User) entities.User {
+	return entities.User{
 		ID:        user.ID,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
