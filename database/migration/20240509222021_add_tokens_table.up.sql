@@ -3,8 +3,10 @@ CREATE TABLE tokens
     id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id    BIGINT UNSIGNED,
     value      VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NULL,
+    deleted_at TIMESTAMP NULL,
 
     CONSTRAINT foreign_user_token FOREIGN KEY (user_id)
         REFERENCES users(id)
