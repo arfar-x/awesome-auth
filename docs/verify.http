@@ -1,0 +1,4 @@
+POST 127.0.0.1:8000/api/v1/auth/verify HTTP/1.1
+Host: 127.0.0.1:8000
+Content-Type: application/json
+Authorization: Bearer {token}
