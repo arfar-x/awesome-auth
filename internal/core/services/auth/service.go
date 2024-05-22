@@ -69,8 +69,8 @@ func (srv *Service) Login(ctx *gin.Context) {
 
 // Logout user and expire the token.
 func (srv *Service) Logout(ctx *gin.Context) {
-	//defer recoverPanics(ctx, "")
-	tokenString, _ := parseToken(ctx.GetHeader("Authorization"))
+	defer recoverPanics(ctx, "")
+	tokenString, _ := parseToken(ctx)
 
 	tokenInstance := jwt.ParsePayload(tokenString)
 
@@ -119,7 +119,7 @@ func (srv *Service) Register(ctx *gin.Context) {
 // Verify whether the user is authorized or not.
 func (srv *Service) Verify(ctx *gin.Context) {
 	defer recoverPanics(ctx, "Unauthorized.")
-	tokenString, _ := parseToken(ctx.GetHeader("Authorization"))
+	tokenString, _ := parseToken(ctx)
 
 	tokenInstance := jwt.ParsePayload(tokenString)
 
@@ -146,7 +146,7 @@ func (srv *Service) Verify(ctx *gin.Context) {
 func (srv *Service) GetMe(ctx *gin.Context) {
 	defer recoverPanics(ctx, "")
 
-	tokenString, _ := parseToken(ctx.GetHeader("Authorization"))
+	tokenString, _ := parseToken(ctx)
 
 	tokenInstance := jwt.ParsePayload(tokenString)
 
@@ -178,7 +178,8 @@ func recoverPanics(ctx *gin.Context, message string) {
 	}
 }
 
-func parseToken(token string) (value string, tokenType string) {
+func parseToken(ctx *gin.Context) (value string, tokenType string) {
+	token := ctx.GetHeader("Authorization")
 	splits := strings.Split(strings.TrimSpace(token), " ")
 	value = splits[1]
 	tokenType = strings.ToLower(splits[0])
