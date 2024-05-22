@@ -2,10 +2,10 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"awesome-auth/internal/entities"
-	"awesome-auth/pkg/jwt"
 	"gorm.io/gorm"
 )
 
@@ -18,7 +18,7 @@ type Token struct {
 }
 
 type TokenRepoInterface interface {
-	Get(ctx context.Context, model entities.Token) (entities.Token, error)
+	FindByUserID(ctx context.Context, model entities.Token) (entities.Token, error)
 	Create(ctx context.Context, model entities.Token) (entities.Token, error)
 }
 
@@ -34,9 +34,24 @@ func NewTokenRepo(db *gorm.DB) *TokenRepo {
 	}
 }
 
-func (t TokenRepo) Get(ctx context.Context, model entities.Token) (entities.Token, error) {
-	//TODO implement me
-	panic("implement me")
+func (t TokenRepo) FindByUserID(ctx context.Context, model entities.Token) (entities.Token, error) {
+	token := Token{
+		UserID: model.UserID,
+	}
+
+	result := t.DB.WithContext(ctx).
+		Where(token).
+		First(&token)
+
+	if err := result.Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entities.Token{}, gorm.ErrRecordNotFound
+		} else {
+			panic(err)
+		}
+	}
+
+	return toTokenEntity(token), nil
 }
 
 func (t TokenRepo) Create(ctx context.Context, model entities.Token) (entities.Token, error) {
@@ -54,14 +69,10 @@ func (t TokenRepo) Create(ctx context.Context, model entities.Token) (entities.T
 		panic(err)
 	}
 
-	return toTokenEntity(token), nil
+	return toTokenEntity(*token), nil
 }
 
-func (t TokenRepo) ValidateToken(token string) bool {
-	return jwt.Validate(token)
-}
-
-func toTokenEntity(t *Token) entities.Token {
+func toTokenEntity(t Token) entities.Token {
 	return entities.Token{
 		ID:        t.ID,
 		UserID:    t.UserID,

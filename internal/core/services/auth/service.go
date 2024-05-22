@@ -45,11 +45,11 @@ func (srv *Service) Login(ctx *gin.Context) {
 	}
 
 	tokenExpirationTime := time.Now().Add(time.Second * time.Duration(configs.Config.Jwt.ExpirationSeconds))
-	tokenString, expiresAt := jwt.CreateToken(user.Username, tokenExpirationTime)
+	tokenInstance := jwt.CreateToken(user.Username, tokenExpirationTime)
 	token, _ := srv.TokenRepo.Create(ctx, entities.Token{
 		UserID:    user.ID,
-		Value:     tokenString,
-		ExpiresAt: expiresAt,
+		Value:     tokenInstance.Value,
+		ExpiresAt: tokenInstance.ExpiresAt,
 	})
 
 	if password.Check(user.Password, request.Password) {
@@ -58,7 +58,7 @@ func (srv *Service) Login(ctx *gin.Context) {
 			http.StatusOK,
 			map[string]string{
 				"token":      token.Value,
-				"expires_at": expiresAt.Format("2006-01-02 15:04:05"),
+				"expires_at": tokenInstance.ExpiresAt.Format("2006-01-02 15:04:05"),
 			},
 			nil,
 		))
@@ -98,8 +98,25 @@ func (srv *Service) Register(ctx *gin.Context) {
 
 // Verify whether the user is authorized or not.
 func (srv *Service) Verify(ctx *gin.Context) {
-	defer recoverPanics(ctx, "Could not verify token.")
-	//token, tokenType := parseToken(ctx.GetHeader("Authorization"))
+	defer recoverPanics(ctx, "Unauthorized.")
+	tokenString, _ := parseToken(ctx.GetHeader("Authorization"))
+
+	tokenInstance := jwt.ParsePayload(tokenString)
+
+	user, _ := srv.UserRepo.Get(ctx, entities.User{Username: tokenInstance.Payload})
+	if user.ID == 0 {
+		ctx.JSON(response.Unauthorized("Unauthorized.", nil))
+		return
+	}
+
+	token, _ := srv.TokenRepo.FindByUserID(ctx, entities.Token{UserID: user.ID})
+
+	if token.ID != 0. && tokenInstance.Check() {
+		ctx.JSON(response.Success("Valid.", true))
+		return
+	}
+
+	ctx.JSON(response.Unauthorized("Unauthorized.", nil))
 }
 
 func (srv *Service) GetMe(ctx *gin.Context) {
@@ -116,7 +133,7 @@ func recoverPanics(ctx *gin.Context, message string) {
 }
 
 func parseToken(token string) (value string, tokenType string) {
-	splits := strings.Split(token, " ")
+	splits := strings.Split(strings.TrimSpace(token), " ")
 	value = splits[1]
 	tokenType = strings.ToLower(splits[0])
 	return

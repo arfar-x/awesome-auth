@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"fmt"
 	"time"
 
 	"awesome-auth/configs"
@@ -8,38 +9,69 @@ import (
 )
 
 type Token struct {
-	value     string
-	expiresAt time.Time
+	Value     string
+	ExpiresAt time.Time
+	Claims    jwt.MapClaims
+	Payload   string
+	Instance  *jwt.Token
 }
 
-func (t *Token) NewToken(payload string) Token {
-	return Token{value: payload}
+// Check applies the conditions for a token to be valid. E.g. it makes sure token's expiration time does not
+// exceed its valid time.
+func (t *Token) Check() bool {
+	if t.Instance.Valid {
+		if !t.ExpiresAt.After(time.Now()) {
+			return true
+		}
+	}
+
+	return false
 }
 
-func CreateToken(payload string, expiresAt time.Time) (string, time.Time) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
-		jwt.MapClaims{
-			"payload":    payload,
-			"expires_at": expiresAt.Unix(),
-		})
+// CreateToken creates a Token instance by given payload and expiration time, also generates the token
+// value and initializes Token by this value.
+func CreateToken(payload any, expiresAt time.Time) *Token {
+	claims := jwt.MapClaims{
+		"payload":    payload,
+		"expires_at": expiresAt.Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	tokenString, err := token.SignedString([]byte(configs.Config.Jwt.SecretKey))
 	if err != nil {
 		panic(err)
 	}
-	return tokenString, expiresAt
+
+	return &Token{
+		Value:     tokenString,
+		ExpiresAt: expiresAt,
+		Claims:    claims,
+		Payload:   payload.(string),
+		Instance:  token,
+	}
 }
 
-func Validate(tokenString string) bool {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+// ParsePayload parses the given token string and returns a Token instance initialized by parsed values.
+func ParsePayload(tokenString string) *Token {
+	token, err := jwt.ParseWithClaims(tokenString, jwt.MapClaims{}, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("token algorithm is not valid")
+		}
 		return []byte(configs.Config.Jwt.SecretKey), nil
 	})
-
 	if err != nil {
 		panic(err)
 	}
 
-	// TODO: Check token expiration time
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return &Token{
+			Value:     tokenString,
+			ExpiresAt: time.UnixMilli(int64(claims["expires_at"].(float64))),
+			Claims:    claims,
+			Payload:   claims["payload"].(string),
+			Instance:  token,
+		}
+	}
 
-	return token.Valid
+	return nil
 }
