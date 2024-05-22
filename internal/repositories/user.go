@@ -20,6 +20,8 @@ type User struct {
 type UserRepoInterface interface {
 	Get(ctx context.Context, model entities.User) (entities.User, error)
 	Create(ctx context.Context, model entities.User) (entities.User, error)
+	Update(ctx context.Context, model entities.User) (entities.User, error)
+	Delete(ctx context.Context, model entities.User) (entities.User, error)
 }
 
 type UserRepo struct {
@@ -33,7 +35,7 @@ func NewUserRepo(db *gorm.DB) *UserRepo {
 }
 
 func (u *UserRepo) Get(ctx context.Context, model entities.User) (entities.User, error) {
-	user := User{
+	user := &User{
 		Username: model.Username,
 	}
 
@@ -49,7 +51,7 @@ func (u *UserRepo) Get(ctx context.Context, model entities.User) (entities.User,
 		}
 	}
 
-	return toUserEntity(user), nil
+	return toUserEntity(*user), nil
 }
 
 func (u *UserRepo) Create(ctx context.Context, model entities.User) (entities.User, error) {
@@ -72,14 +74,52 @@ func (u *UserRepo) Create(ctx context.Context, model entities.User) (entities.Us
 	return toUserEntity(*user), nil
 }
 
-func (u *UserRepo) Update(ctx context.Context, model any) any {
-	//TODO implement me
-	panic("implement me")
+func (u *UserRepo) Update(ctx context.Context, model entities.User) (entities.User, error) {
+	user := &User{
+		Username:  model.Username,
+		Email:     model.Email,
+		FirstName: model.FirstName,
+		LastName:  model.LastName,
+		Password:  model.Password,
+	}
+
+	result := u.DB.WithContext(ctx).
+		Where(user).
+		Updates(&user)
+
+	if err := result.Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entities.User{}, gorm.ErrRecordNotFound
+		} else {
+			panic(err)
+		}
+	}
+
+	return toUserEntity(*user), nil
 }
 
-func (u *UserRepo) Delete(ctx context.Context, model any) any {
-	//TODO implement me
-	panic("implement me")
+func (u *UserRepo) Delete(ctx context.Context, model entities.User) (bool, error) {
+	user := User{
+		Username:  model.Username,
+		Email:     model.Email,
+		FirstName: model.FirstName,
+		LastName:  model.LastName,
+		Password:  model.Password,
+	}
+
+	result := u.DB.WithContext(ctx).
+		Where(user).
+		Delete(&user)
+
+	if err := result.Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, gorm.ErrRecordNotFound
+		} else {
+			panic(err)
+		}
+	}
+
+	return true, nil
 }
 
 // Turn a repository model object into a domain entity.
