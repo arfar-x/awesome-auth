@@ -1,6 +1,7 @@
 package http
 
 import (
+	"awesome-auth/internal/core/http/middlewares"
 	"awesome-auth/internal/core/services/auth"
 	"awesome-auth/internal/repositories"
 
@@ -15,9 +16,13 @@ func (s *Server) DefineAuthRoutes(router *gin.RouterGroup) {
 
 	authRouter := router.Group("auth")
 
-	authRouter.POST("login", service.Login)
-	authRouter.POST("logout", service.Logout)
-	authRouter.POST("register", service.Register)
-	authRouter.POST("verify", service.Verify)
-	authRouter.GET("me", service.GetMe)
+	middlewares.CommonMiddlewares(router)
+
+	{
+		authRouter.POST("login", service.Login)
+		authRouter.POST("logout", service.Logout)
+		authRouter.POST("register", service.Register)
+		authRouter.POST("verify", service.Verify).Use(middlewares.CheckTokenExists())
+		authRouter.GET("me", service.GetMe).Use(middlewares.CheckTokenExists())
+	}
 }
