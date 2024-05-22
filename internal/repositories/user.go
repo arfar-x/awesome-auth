@@ -21,7 +21,7 @@ type UserRepoInterface interface {
 	Get(ctx context.Context, model entities.User) (entities.User, error)
 	Create(ctx context.Context, model entities.User) (entities.User, error)
 	Update(ctx context.Context, model entities.User) (entities.User, error)
-	Delete(ctx context.Context, model entities.User) (entities.User, error)
+	Delete(ctx context.Context, model entities.User) (bool, error)
 }
 
 type UserRepo struct {
