@@ -134,7 +134,7 @@ func (srv *Service) Verify(ctx *gin.Context) {
 		UserID: user.ID,
 	})
 
-	if token.ID != 0. && tokenInstance.Check() {
+	if token.ID != 0 && tokenInstance.Check() {
 		ctx.JSON(response.Success("Valid.", true))
 		return
 	}
