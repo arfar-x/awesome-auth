@@ -20,6 +20,7 @@ type Token struct {
 type TokenRepoInterface interface {
 	FindByUserID(ctx context.Context, model entities.Token) (entities.Token, error)
 	Create(ctx context.Context, model entities.Token) (entities.Token, error)
+	Delete(ctx context.Context, model entities.Token) (bool, error)
 }
 
 type TokenRepo struct {
@@ -70,6 +71,28 @@ func (t TokenRepo) Create(ctx context.Context, model entities.Token) (entities.T
 	}
 
 	return toTokenEntity(*token), nil
+}
+
+func (t TokenRepo) Delete(ctx context.Context, model entities.Token) (bool, error) {
+	token := Token{
+		Value:  model.Value,
+		UserID: model.UserID,
+	}
+
+	result := t.DB.WithContext(ctx).
+		Unscoped().
+		Where(token).
+		Delete(&t.Token)
+
+	if err := result.Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, gorm.ErrRecordNotFound
+		} else {
+			panic(err)
+		}
+	}
+
+	return true, nil
 }
 
 func toTokenEntity(t Token) entities.Token {

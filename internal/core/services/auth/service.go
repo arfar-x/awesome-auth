@@ -69,7 +69,27 @@ func (srv *Service) Login(ctx *gin.Context) {
 
 // Logout user and expire the token.
 func (srv *Service) Logout(ctx *gin.Context) {
+	//defer recoverPanics(ctx, "")
+	tokenString, _ := parseToken(ctx.GetHeader("Authorization"))
 
+	tokenInstance := jwt.ParsePayload(tokenString)
+
+	user, _ := srv.UserRepo.Get(ctx, entities.User{Username: tokenInstance.Payload})
+	if user.ID == 0 {
+		ctx.JSON(response.Unauthorized("Unauthorized.", nil))
+		return
+	}
+
+	result, _ := srv.TokenRepo.Delete(ctx, entities.Token{
+		Value:  tokenInstance.Value,
+		UserID: user.ID,
+	})
+	if result {
+		ctx.JSON(response.Success("Logged out.", result))
+		return
+	}
+
+	ctx.JSON(response.NotFound("Could not log out.", result))
 }
 
 // Register user.
