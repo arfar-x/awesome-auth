@@ -18,7 +18,7 @@ type Token struct {
 }
 
 type TokenRepoInterface interface {
-	FindByUserID(ctx context.Context, model entities.Token) (entities.Token, error)
+	Get(ctx context.Context, model entities.Token) (entities.Token, error)
 	Create(ctx context.Context, model entities.Token) (entities.Token, error)
 	Delete(ctx context.Context, model entities.Token) (bool, error)
 }
@@ -35,9 +35,11 @@ func NewTokenRepo(db *gorm.DB) *TokenRepo {
 	}
 }
 
-func (t TokenRepo) FindByUserID(ctx context.Context, model entities.Token) (entities.Token, error) {
+func (t TokenRepo) Get(ctx context.Context, model entities.Token) (entities.Token, error) {
 	token := Token{
-		UserID: model.UserID,
+		Value:     model.Value,
+		ExpiresAt: model.ExpiresAt,
+		UserID:    model.UserID,
 	}
 
 	result := t.DB.WithContext(ctx).

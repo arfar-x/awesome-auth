@@ -129,7 +129,10 @@ func (srv *Service) Verify(ctx *gin.Context) {
 		return
 	}
 
-	token, _ := srv.TokenRepo.FindByUserID(ctx, entities.Token{UserID: user.ID})
+	token, _ := srv.TokenRepo.Get(ctx, entities.Token{
+		Value:  tokenInstance.Value,
+		UserID: user.ID,
+	})
 
 	if token.ID != 0. && tokenInstance.Check() {
 		ctx.JSON(response.Success("Valid.", true))
@@ -139,8 +142,31 @@ func (srv *Service) Verify(ctx *gin.Context) {
 	ctx.JSON(response.Unauthorized("Unauthorized.", nil))
 }
 
+// GetMe gets the information about current user making the request.
 func (srv *Service) GetMe(ctx *gin.Context) {
+	defer recoverPanics(ctx, "")
 
+	tokenString, _ := parseToken(ctx.GetHeader("Authorization"))
+
+	tokenInstance := jwt.ParsePayload(tokenString)
+
+	user, _ := srv.UserRepo.Get(ctx, entities.User{Username: tokenInstance.Payload})
+	if user.ID == 0 {
+		ctx.JSON(response.NotFound("User not found", nil))
+		return
+	}
+
+	token, _ := srv.TokenRepo.Get(ctx, entities.Token{
+		Value:  tokenInstance.Value,
+		UserID: user.ID,
+	})
+
+	if token.ID == 0. || !tokenInstance.Check() {
+		ctx.JSON(response.Unauthorized("Unauthorized.", nil))
+		return
+	}
+
+	ctx.JSON(response.Success("User information.", resources.UserShowResource(user)))
 }
 
 func recoverPanics(ctx *gin.Context, message string) {
