@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    container_name: ${APP_NAME}_backend
+    restart: always
+    env_file:
+      - .env.go
+    ports:
+      - "80:80"
+      - "443:443"
+
+  database:
+    image: mysql
+    container_name: ${APP_NAME}_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - ${MYSQL_EXPOSE_PORT}:3306
+    volumes:
+      - mysql:/var/lib/mysql
+
+volumes:
+  mysql:
