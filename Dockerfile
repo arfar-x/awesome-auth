@@ -1,5 +1,5 @@
 FROM golang:1.18-alpine
-LABEL authors="alireza"
+LABEL authors="Alireza"
 
 WORKDIR /app
 
@@ -10,6 +10,8 @@ RUN go mod download
 # Install Golang migration
 RUN go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
-RUN go build cmd/main.go
+RUN go build -o /app/main_app cmd/main.go
 
-CMD ["main"]
+RUN chmod +x /app/main_app
+
+CMD ["./main_app"]
