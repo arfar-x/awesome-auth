@@ -37,7 +37,7 @@ var Config *AppConfig
 
 // InitConfig Initialize application configurations by environment variables.
 func InitConfig() *AppConfig {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(".env.app"); err != nil {
 		panic("Could not load environment variables.")
 	}
 
