@@ -1,0 +1,24 @@
+version: 3
+
+dotenv:
+  - .env
+
+tasks:
+  init-db:
+    desc: "Create database and initialize it."
+    prompt: "Are you sure you want to [re]initialize the database ?"
+    cmds:
+      - |
+        docker compose run --rm database \
+          sh -c "mysql -h database -u root -p${MYSQL_ROOT_PASSWORD} \
+            -e 'CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE_NAME};'"
+
+  migrate:
+    desc: "Migrate the database"
+    prompt: "Are sure you want to run database migrations ?"
+    cmds:
+      - |
+        docker compose run --rm backend \
+          migrate \
+          -database "mysql://root:${MYSQL_ROOT_PASSWORD}@tcp(database:${MYSQL_EXPOSE_PORT})/${MYSQL_DATABASE_NAME}" \
+          -path ./database/migration/ up
