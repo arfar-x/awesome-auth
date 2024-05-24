@@ -1,12 +1,18 @@
 # Awesome auth
 
-This project is part of [awesome-project]()
+This project is part of [awesome-project]().
+
+This is the service responsible for authentication users and acts as an SSO.
+
+### Requirements
+**Taskfile**: an alternative and more modern tool to Makefile
+To install it:
+```shell
+sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+```
 
 ### Improvements
 - Cron job for revoking token existed more than 24 hours
-- Redis for caching (caching of what ?!)
 - Testing
-- Translation (Not exactly, we should use HTTP status codes for a standard convention as an SSO service)
-- Swagger
 - Rate limiting
-- Monitoring with Prometheus
+- Service level monitoring
