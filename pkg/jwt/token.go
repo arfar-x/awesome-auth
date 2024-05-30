@@ -11,9 +11,14 @@ import (
 type Token struct {
 	Value     string
 	ExpiresAt time.Time
-	Claims    jwt.MapClaims
-	Payload   string
+	Claims    StandardClaimsWithUsername
 	Instance  *jwt.Token
+}
+
+type StandardClaimsWithUsername struct {
+	jwt.StandardClaims
+	Username string `json:"username"`
+	Email    string `json:"email"`
 }
 
 // Check applies the conditions for a token to be valid. E.g. it makes sure token's expiration time does not
@@ -30,11 +35,11 @@ func (t *Token) Check() bool {
 
 // CreateToken creates a Token instance by given payload and expiration time, also generates the token
 // value and initializes Token by this value.
-func CreateToken(payload any, expiresAt time.Time) *Token {
-	claims := jwt.MapClaims{
-		"payload":    payload,
-		"expires_at": expiresAt.Unix(),
+func CreateToken(claims StandardClaimsWithUsername, expiresAt time.Time) *Token {
+	claims.StandardClaims = jwt.StandardClaims{
+		ExpiresAt: expiresAt.Unix(),
 	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	tokenString, err := token.SignedString([]byte(configs.Config.Jwt.SecretKey))
@@ -46,14 +51,13 @@ func CreateToken(payload any, expiresAt time.Time) *Token {
 		Value:     tokenString,
 		ExpiresAt: expiresAt,
 		Claims:    claims,
-		Payload:   payload.(string),
 		Instance:  token,
 	}
 }
 
 // ParsePayload parses the given token string and returns a Token instance initialized by parsed values.
 func ParsePayload(tokenString string) *Token {
-	token, err := jwt.ParseWithClaims(tokenString, jwt.MapClaims{}, func(token *jwt.Token) (any, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &StandardClaimsWithUsername{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("token algorithm is not valid")
 		}
@@ -63,12 +67,11 @@ func ParsePayload(tokenString string) *Token {
 		panic(err)
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+	if claims, ok := token.Claims.(*StandardClaimsWithUsername); ok && token.Valid {
 		return &Token{
 			Value:     tokenString,
-			ExpiresAt: time.UnixMilli(int64(claims["expires_at"].(float64))),
-			Claims:    claims,
-			Payload:   claims["payload"].(string),
+			ExpiresAt: time.UnixMilli(claims.ExpiresAt),
+			Claims:    *claims,
 			Instance:  token,
 		}
 	}

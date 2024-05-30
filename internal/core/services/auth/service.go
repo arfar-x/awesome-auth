@@ -45,7 +45,10 @@ func (srv *Service) Login(ctx *gin.Context) {
 	}
 
 	tokenExpirationTime := time.Now().Add(time.Second * time.Duration(configs.Config.Jwt.ExpirationSeconds))
-	tokenInstance := jwt.CreateToken(user.Username, tokenExpirationTime)
+	tokenInstance := jwt.CreateToken(jwt.StandardClaimsWithUsername{
+		Username: user.Username,
+		Email:    user.Email,
+	}, tokenExpirationTime)
 	token, _ := srv.TokenRepo.Create(ctx, entities.Token{
 		UserID:    user.ID,
 		Value:     tokenInstance.Value,
@@ -74,7 +77,10 @@ func (srv *Service) Logout(ctx *gin.Context) {
 
 	tokenInstance := jwt.ParsePayload(tokenString)
 
-	user, _ := srv.UserRepo.Get(ctx, entities.User{Username: tokenInstance.Payload})
+	user, _ := srv.UserRepo.Get(ctx, entities.User{
+		Username: tokenInstance.Claims.Username,
+		Email:    tokenInstance.Claims.Email,
+	})
 	if user.ID == 0 {
 		ctx.JSON(response.Unauthorized("Unauthorized.", nil))
 		return
@@ -123,7 +129,10 @@ func (srv *Service) Verify(ctx *gin.Context) {
 
 	tokenInstance := jwt.ParsePayload(tokenString)
 
-	user, _ := srv.UserRepo.Get(ctx, entities.User{Username: tokenInstance.Payload})
+	user, _ := srv.UserRepo.Get(ctx, entities.User{
+		Username: tokenInstance.Claims.Username,
+		Email:    tokenInstance.Claims.Email,
+	})
 	if user.ID == 0 {
 		ctx.JSON(response.Unauthorized("Unauthorized.", nil))
 		return
@@ -144,13 +153,16 @@ func (srv *Service) Verify(ctx *gin.Context) {
 
 // GetMe gets the information about current user making the request.
 func (srv *Service) GetMe(ctx *gin.Context) {
-	defer recoverPanics(ctx, "")
+	//defer recoverPanics(ctx, "")
 
 	tokenString, _ := parseToken(ctx)
 
 	tokenInstance := jwt.ParsePayload(tokenString)
 
-	user, _ := srv.UserRepo.Get(ctx, entities.User{Username: tokenInstance.Payload})
+	user, _ := srv.UserRepo.Get(ctx, entities.User{
+		Username: tokenInstance.Claims.Username,
+		Email:    tokenInstance.Claims.Email,
+	})
 	if user.ID == 0 {
 		ctx.JSON(response.NotFound("User not found", nil))
 		return
@@ -167,6 +179,10 @@ func (srv *Service) GetMe(ctx *gin.Context) {
 	}
 
 	ctx.JSON(response.Success("User information.", resources.UserShowResource(user)))
+}
+
+func UserByToken(token string) {
+
 }
 
 func recoverPanics(ctx *gin.Context, message string) {
