@@ -22,7 +22,7 @@ func (s *Server) DefineAuthRoutes(router *gin.RouterGroup) {
 		authRouter.POST("login", service.Login)
 		authRouter.POST("logout", service.Logout)
 		authRouter.POST("register", service.Register)
-		authRouter.POST("verify", service.Verify).Use(middlewares.CheckTokenExists())
+		authRouter.GET("verify", service.Verify).Use(middlewares.CheckTokenExists())
 		authRouter.GET("me", service.GetMe).Use(middlewares.CheckTokenExists())
 	}
 }
