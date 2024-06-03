@@ -153,7 +153,7 @@ func (srv *Service) Verify(ctx *gin.Context) {
 
 // GetMe gets the information about current user making the request.
 func (srv *Service) GetMe(ctx *gin.Context) {
-	//defer recoverPanics(ctx, "")
+	defer recoverPanics(ctx, "")
 
 	tokenString, _ := parseToken(ctx)
 
@@ -179,10 +179,6 @@ func (srv *Service) GetMe(ctx *gin.Context) {
 	}
 
 	ctx.JSON(response.Success("User information.", resources.UserShowResource(user)))
-}
-
-func UserByToken(token string) {
-
 }
 
 func recoverPanics(ctx *gin.Context, message string) {
